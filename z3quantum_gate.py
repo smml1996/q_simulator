@@ -34,13 +34,17 @@ class Z3QuantumGate:
         self.specific_subclass.execute()
 
     @staticmethod
-    def measure() -> Optional[Tuple[float, Dict[str, bool]]]:
+    def measure() -> Tuple[float, Dict[str, bool]]:
+        """
+
+        :return: the probability of measuring a state, and the state itself or it raises an Exception
+        """
         prob: float = 1.0
         state: Dict[str, bool] = dict()
         for (var_name, obj_qubit) in Z3QuantumGate.mapping.items():
             random_num = random()
-            assert(random_num >=0 and random_num <= 1.0)
-            assert( math.isclose(obj_qubit.zero_real**2 + obj_qubit.one_real**2, 1.0, rel_tol=1e-5))
+            assert(0 <= random_num <= 1.0)
+            assert(math.isclose(obj_qubit.zero_real**2 + obj_qubit.one_real**2, 1.0, rel_tol=1e-5))
             if random_num <= obj_qubit.zero_real**2:
                 assign_value = False
             else:
@@ -50,8 +54,6 @@ class Z3QuantumGate:
                 if StaticSolver.is_value_sat(obj_qubit.qubit, not assign_value):
                     assign_value = not assign_value
                 else:
-                    print(prob)
-                    print(state)
                     raise Exception(f"No value satisfies for {var_name}")
 
             StaticSolver.solver.add(obj_qubit.qubit == assign_value)
@@ -61,16 +63,15 @@ class Z3QuantumGate:
                 prob *= obj_qubit.zero_real
             assert(var_name not in state.keys())
             state[var_name] = assign_value
-        return round(prob,2), state
-
+        return round(prob, 2), state
 
     @staticmethod
     def does_state_exists(state: Dict[str, bool]) -> Optional[float]:
-        '''
+        """
         Check whether a given state exists
         :param state: a dictionary mapping variable names to boolean values
         :return: probability that the given state is observed upon measurement, or None
-        '''
+        """
         answer = 1.0
         pop_count = 0
         for (var, value) in state.items():
@@ -79,7 +80,7 @@ class Z3QuantumGate:
             qubit = Z3QuantumGate.mapping[var]
             StaticSolver.solver.add(qubit.qubit == value)
             check_output = StaticSolver.check()
-            if  check_output == z3.unsat:
+            if check_output == z3.unsat:
                 while pop_count > 0:
                     StaticSolver.solver.pop()
                     pop_count -= 1
@@ -94,7 +95,7 @@ class Z3QuantumGate:
         while pop_count > 0:
             StaticSolver.solver.pop()
             pop_count -= 1
-        return round(answer,2)
+        return round(answer, 2)
 
 
 class XGate(Z3QuantumGate):

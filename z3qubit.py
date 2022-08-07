@@ -19,7 +19,6 @@ class Z3Qubit:
         self.counter += 1
         StaticSolver.solver.add(self.qubit == False)
 
-
     def get_vars(self) -> z3.Bool:
         qubit = z3.Bool(f"bv_{self.name}_{self.counter}")
         self.counter += 1

@@ -1,8 +1,10 @@
 from typing import Optional
 
 from z3 import Solver, Bool, sat, unsat
+
+
 class StaticSolver:
-    solver : Solver = Solver()
+    solver: Solver = Solver()
 
     @staticmethod
     def check():
@@ -10,10 +12,10 @@ class StaticSolver:
 
     @staticmethod
     def is_value_sat(var: Bool, value: bool) -> Optional[bool]:
-        StaticSolver.solver.push() # create new scope
+        StaticSolver.solver.push()  # create new scope
         StaticSolver.solver.add(var == value)
         check_value = StaticSolver.check()
-        StaticSolver.solver.pop() # restore state
+        StaticSolver.solver.pop()  # restore state
         if check_value == sat:
             return True
         if check_value == unsat:
@@ -24,4 +26,3 @@ class StaticSolver:
     def model():
         m = StaticSolver.solver.model()
         print(m)
-
