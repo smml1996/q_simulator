@@ -43,3 +43,15 @@ class Z3Qubit:
         temp_zero_amplitude = (self.zero_amplitude + self.one_amplitude) / sqrt(2)
         temp_one_amplitude = (self.zero_amplitude - self.one_amplitude) / sqrt(2)
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
+
+    def y(self) -> None:
+        # introduces a global phase i
+        temp_zero_amplitude = self.zero_amplitude * complex(0, -1)
+        temp_one_amplitude = self.one_amplitude * complex(0, 1)
+        self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
+
+    def z(self) -> None:
+        # phase flip gate
+        temp_zero_amplitude = self.zero_amplitude
+        temp_one_amplitude = self.one_amplitude * complex(-1, 0)
+        self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)

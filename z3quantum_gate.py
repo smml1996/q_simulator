@@ -29,6 +29,10 @@ class Z3QuantumGate:
             self.base_class = SwapGate(self.name, self.args)
         elif self.name == I:
             self.base_class = IGate(self.name, self.args)
+        elif self.name == Z:
+            self.base_class = ZGate(self.name, self.args)
+        elif self.name == Y:
+            self.base_class = YGate(self.name, self.args)
         else:
             raise Exception(f"Gate ({self.name}) not implemented")
 
@@ -188,3 +192,20 @@ class IGate(Z3QuantumGate):
     def execute(self) -> None:
         # identity gate
         assert (len(self.args) == 1)
+
+class ZGate(Z3QuantumGate):
+    def __init__(self, name: str, args: List[str]):
+        super().__init__(name, args)
+
+    def execute(self) -> None:
+        assert(len(self.args) == 1)
+        Z3QuantumGate.mapping[self.args[0]].z()
+
+class YGate(Z3QuantumGate):
+    def __init__(self, name: str, args: List[str]):
+        super().__init__(name, args)
+
+    def execute(self) -> None:
+        assert (len(self.args) == 1)
+        Z3QuantumGate.mapping[self.args[0]].y()
+

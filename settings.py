@@ -4,3 +4,5 @@ X = "x" # not gate
 CZ = "rzz" # phase gate 180 degrees
 SWAP = "swap"
 I = "id"
+Y = "y"
+Z = "z"
