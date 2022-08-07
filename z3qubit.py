@@ -1,6 +1,6 @@
 import z3
 from utils import StaticSolver
-from math import sqrt
+from math import sqrt, e, pi
 
 
 class Z3Qubit:
@@ -13,8 +13,8 @@ class Z3Qubit:
 
     def __init__(self, name):
         self.name = name
-        self.zero_amplitude = complex(1,0)
-        self.one_amplitude = complex(0,0)
+        self.zero_amplitude = complex(1, 0)
+        self.one_amplitude = complex(0, 0)
         self.qubit = z3.Bool(f"{name}_{self.counter}")
         self.counter += 1
         StaticSolver.solver.add(self.qubit == False)
@@ -46,8 +46,8 @@ class Z3Qubit:
 
     def y(self) -> None:
         # introduces a global phase i
-        temp_zero_amplitude = self.zero_amplitude * complex(0, -1)
-        temp_one_amplitude = self.one_amplitude * complex(0, 1)
+        temp_zero_amplitude = self.one_amplitude * complex(0, -1)
+        temp_one_amplitude = self.zero_amplitude * complex(0, 1)
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
 
     def z(self) -> None:
@@ -55,3 +55,9 @@ class Z3Qubit:
         temp_zero_amplitude = self.zero_amplitude
         temp_one_amplitude = self.one_amplitude * complex(-1, 0)
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
+
+    def t(self) -> None:
+        temp_zero_amplitude = self.zero_amplitude
+        temp_one_amplitude = self.one_amplitude * (complex(e, 0) ** complex(0, pi/4))
+        self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
+

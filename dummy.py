@@ -1,18 +1,17 @@
 from z3qubit import Z3Qubit as Qubit
 from z3quantum_gate import Z3QuantumGate
-from utils import StaticSolver
 
 q = Qubit("control")
 q2 = Qubit("target")
 
 
-Z3QuantumGate.mapping["control"] = q
-Z3QuantumGate.mapping["target"] = q2
-
-Z3QuantumGate("cx", ["control", "target"]).execute()
+Z3QuantumGate.mapping["dy"] = q
+Z3QuantumGate.mapping["pony"] = q2
+q.t()
+# Z3QuantumGate("cx", ["dummy", "pony"]).execute()
 
 # q.normalization_constraint()
 
-
+from utils import StaticSolver
 print(StaticSolver.check())
 StaticSolver.model()

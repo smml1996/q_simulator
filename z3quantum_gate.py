@@ -33,6 +33,10 @@ class Z3QuantumGate:
             self.base_class = ZGate(self.name, self.args)
         elif self.name == Y:
             self.base_class = YGate(self.name, self.args)
+        elif self.name == T:
+            self.base_class = TGate(self.name, self.args)
+        elif self.name == S:
+            self.base_class = SGate(self.name, self.args)
         else:
             raise Exception(f"Gate ({self.name}) not implemented")
 
@@ -56,9 +60,10 @@ class Z3QuantumGate:
         for (var_name, obj_qubit) in Z3QuantumGate.mapping.items():
             random_num = random()
             assert(0 <= random_num <= 1.0)
-            assert(math.isclose((obj_qubit.zero_amplitude* obj_qubit.zero_amplitude.conjugate()
-                                + obj_qubit.one_amplitude * obj_qubit.one_amplitude.conjugate()).real, 1.0, rel_tol=1e-5))
-            if random_num <= (obj_qubit.zero_amplitude*obj_qubit.zero_amplitude.conjugate()).real:
+            assert(math.isclose((obj_qubit.zero_amplitude * obj_qubit.zero_amplitude.conjugate()
+                                + obj_qubit.one_amplitude * obj_qubit.one_amplitude.conjugate()).real, 1.0,
+                                rel_tol=1e-5))
+            if random_num <= (obj_qubit.zero_amplitude * obj_qubit.zero_amplitude.conjugate()).real:
                 assign_value = False
             else:
                 assign_value = True
@@ -164,6 +169,7 @@ class CXGate(Z3QuantumGate):
         control.swap_vars(temp_control_zero, temp_control_one, None)
         target.swap_vars(temp_target_zero, temp_target_one, target_qubit)
 
+
 class CZGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
         super().__init__(name, args)
@@ -175,6 +181,7 @@ class CZGate(Z3QuantumGate):
         Z3QuantumGate(CX, self.args).execute()
         target.hadamard()
 
+
 class SwapGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
         super().__init__(name, args)
@@ -185,6 +192,7 @@ class SwapGate(Z3QuantumGate):
         Z3QuantumGate(CX, self.args[::-1]).execute()
         Z3QuantumGate(CX, self.args).execute()
 
+
 class IGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
         super().__init__(name, args)
@@ -192,6 +200,7 @@ class IGate(Z3QuantumGate):
     def execute(self) -> None:
         # identity gate
         assert (len(self.args) == 1)
+
 
 class ZGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
@@ -201,6 +210,7 @@ class ZGate(Z3QuantumGate):
         assert(len(self.args) == 1)
         Z3QuantumGate.mapping[self.args[0]].z()
 
+
 class YGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
         super().__init__(name, args)
@@ -209,3 +219,21 @@ class YGate(Z3QuantumGate):
         assert (len(self.args) == 1)
         Z3QuantumGate.mapping[self.args[0]].y()
 
+
+class TGate(Z3QuantumGate):
+    def __init__(self, name: str, args: List[str]):
+        super().__init__(name, args)
+
+    def execute(self) -> None:
+        assert (len(self.args) == 1)
+        Z3QuantumGate.mapping[self.args[0]].t()
+
+
+class SGate(Z3QuantumGate):
+    def __init__(self, name: str, args: List[str]):
+        super().__init__(name, args)
+
+    def execute(self) -> None:
+        assert (len(self.args) == 1)
+        Z3QuantumGate.mapping[self.args[0]].t()
+        Z3QuantumGate.mapping[self.args[0]].t()
