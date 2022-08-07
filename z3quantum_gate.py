@@ -1,8 +1,10 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from z3qubit import Z3Qubit
 from settings import *
 from utils import StaticSolver
 import z3
+from random import random
+import math
 
 
 class Z3QuantumGate:
@@ -32,30 +34,67 @@ class Z3QuantumGate:
         self.specific_subclass.execute()
 
     @staticmethod
-    def measure(self) -> Dict[str, bool]:
-        raise Exception("missing implementation")
+    def measure() -> Optional[Tuple[float, Dict[str, bool]]]:
+        prob: float = 1.0
+        state: Dict[str, bool] = dict()
+        for (var_name, obj_qubit) in Z3QuantumGate.mapping.items():
+            random_num = random()
+            assert(random_num >=0 and random_num <= 1.0)
+            assert( math.isclose(obj_qubit.zero_real**2 + obj_qubit.one_real**2, 1.0, rel_tol=1e-5))
+            if random_num <= obj_qubit.zero_real**2:
+                assign_value = False
+            else:
+                assign_value = True
+
+            if not StaticSolver.is_value_sat(obj_qubit.qubit, assign_value):
+                if StaticSolver.is_value_sat(obj_qubit.qubit, not assign_value):
+                    assign_value = not assign_value
+                else:
+                    print(prob)
+                    print(state)
+                    raise Exception(f"No value satisfies for {var_name}")
+
+            StaticSolver.solver.add(obj_qubit.qubit == assign_value)
+            if assign_value:
+                prob *= obj_qubit.one_real
+            else:
+                prob *= obj_qubit.zero_real
+            assert(var_name not in state.keys())
+            state[var_name] = assign_value
+        return round(prob,2), state
+
 
     @staticmethod
     def does_state_exists(state: Dict[str, bool]) -> Optional[float]:
         '''
-
+        Check whether a given state exists
         :param state: a dictionary mapping variable names to boolean values
         :return: probability that the given state is observed upon measurement, or None
         '''
         answer = 1.0
+        pop_count = 0
         for (var, value) in state.items():
-            StaticSolver.solver.push() # create new scope
+            StaticSolver.solver.push()  # create new scope
+            pop_count += 1
             qubit = Z3QuantumGate.mapping[var]
             StaticSolver.solver.add(qubit.qubit == value)
             check_output = StaticSolver.check()
-            if  check_output == "unsat":
+            if  check_output == z3.unsat:
+                while pop_count > 0:
+                    StaticSolver.solver.pop()
+                    pop_count -= 1
                 return 0.0
-            elif check_output == "unknown":
+            elif check_output == z3.unknown:
                 return None
+            if value:
+                answer *= qubit.one_real
+            else:
+                answer *= qubit.zero_real
 
-
-        return answer
-
+        while pop_count > 0:
+            StaticSolver.solver.pop()
+            pop_count -= 1
+        return round(answer,2)
 
 
 class XGate(Z3QuantumGate):
@@ -93,15 +132,14 @@ class CXGate(Z3QuantumGate):
         alpha2 = control.zero_real
         beta2 = control.one_real
 
-        temp_control_zero, temp_control_one, control_qubit = control.get_vars()
-        temp_target_zero, temp_target_one, target_qubit = target.get_vars()
+        target_qubit = target.get_vars()
 
-        StaticSolver.solver.add(temp_control_zero == alpha1*alpha2 + alpha2*beta1)
-        StaticSolver.solver.add(temp_control_one == beta1*beta2 + beta2*alpha1)
+        temp_control_zero = alpha1*alpha2 + alpha2*beta1
+        temp_control_one = beta1*beta2 + beta2*alpha1
 
-        StaticSolver.solver.add(temp_target_zero == alpha1*alpha2 + beta1*beta2)
-        StaticSolver.solver.add(temp_target_one == alpha1*beta2 + alpha2*beta1)
+        temp_target_zero = alpha1*alpha2 + beta1*beta2
+        temp_target_one = alpha1*beta2 + alpha2*beta1
 
         StaticSolver.solver.add(target_qubit == z3.If(control.qubit, z3.Not(target.qubit), target.qubit))
         control.swap_vars(temp_control_zero, temp_control_one, None)
-        target.swap_vars(temp_target_zero, temp_target_zero, target_qubit)
+        target.swap_vars(temp_target_zero, temp_target_one, target_qubit)
