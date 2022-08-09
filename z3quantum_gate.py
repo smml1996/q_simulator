@@ -37,6 +37,8 @@ class Z3QuantumGate:
             self.base_class = TGate(self.name, self.args)
         elif self.name == S:
             self.base_class = SGate(self.name, self.args)
+        elif self.name == CCX or self.name == MCX:
+            self.base_class = MCXGate(self.name, self.args)
         else:
             raise Exception(f"Gate ({self.name}) not implemented")
 
