@@ -3,6 +3,8 @@ from qiskit import QuantumCircuit
 from z3quantum_gate import *
 import warnings
 
+# https://ericpony.github.io/z3py-tutorial/guide-examples.htm
+
 warnings.filterwarnings('ignore', category=DeprecationWarning)  # DeprecationWarning: Back-references to from Bit
 # instances to their containing Registers have been
 # deprecated. Instead, inspect Registers to find

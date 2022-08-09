@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple
 from z3qubit import Z3Qubit
 from settings import *
-from utils import StaticSolver
+from utils import StaticSolver, get_amplitudes, get_and_expression
 import z3
 from random import random
 import math
@@ -237,3 +237,40 @@ class SGate(Z3QuantumGate):
         assert (len(self.args) == 1)
         Z3QuantumGate.mapping[self.args[0]].t()
         Z3QuantumGate.mapping[self.args[0]].t()
+
+
+class MCXGate(Z3QuantumGate):
+    def __init__(self, name: str, args: List[str]):
+        """
+        assume that last element of args is the target qubit
+        :param name: unique qubit name
+        :param args: control qubits and a target qubit
+        """
+        super().__init__(name, args)
+
+    def execute(self) -> None:
+        amplitudes = []  # map a machine state to its amplitude
+        get_amplitudes(Z3QuantumGate.mapping, self.args, amplitudes)
+
+        # flip last probabilities
+        temp = amplitudes[len(amplitudes)-1]
+        amplitudes[len(amplitudes)-1] = amplitudes[len(amplitudes)-2]
+        amplitudes[len(amplitudes)-2] = temp
+
+        # compute individual probabilities of qubits (only target qubit changes)
+        temp_zero_amplitude = 0.0
+        temp_one_amplitude = 0.0
+        for i in range(2**len(self.args)+1):
+            if i & 1 == 1:
+                temp_one_amplitude += amplitudes[i]
+            else:
+                temp_zero_amplitude += amplitudes[i]
+
+        # updating SAT formula
+        target_qubit = Z3QuantumGate.mapping[self.args[-1]].get_vars()
+        current_target = Z3QuantumGate.mapping[self.args[-1]].qubit
+        qubits_to_and = []
+        for name in self.args[:-1]:
+            qubits_to_and.append(Z3QuantumGate.mapping[name].qubit)
+        and_expression = get_and_expression(qubits_to_and)
+        StaticSolver.solver.add(target_qubit == z3.If(and_expression, z3.Not(current_target), current_target))
