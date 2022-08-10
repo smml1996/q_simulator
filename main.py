@@ -39,11 +39,11 @@ for instruction in qc.data:
 
 print(Z3QuantumGate.measure())
 
-# state = {'q_0': True, 'q_1': True, 'q_2': True, 'q_3': True}
-# print("|00>: ", Z3QuantumGate.does_state_exists(state))
-# state = {'q_0': True, 'q_1': False}
-# print("|01>: ", Z3QuantumGate.does_state_exists(state))
-# state = {'q_0': False, 'q_1': True}
-# print("|10>: ", Z3QuantumGate.does_state_exists(state))
-# state = {'q_0': True, 'q_1': True}
-# print("|11>: ", Z3QuantumGate.does_state_exists(state))
+state = {'q_0': True, 'q_1': True}
+print("|00>: ", Z3QuantumGate.does_state_exists(state))
+state = {'q_0': True, 'q_1': False}
+print("|01>: ", Z3QuantumGate.does_state_exists(state))
+state = {'q_0': False, 'q_1': True}
+print("|10>: ", Z3QuantumGate.does_state_exists(state))
+state = {'q_0': True, 'q_1': True}
+print("|11>: ", Z3QuantumGate.does_state_exists(state))

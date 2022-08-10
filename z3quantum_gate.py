@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple
 from z3qubit import Z3Qubit
 from settings import *
 from static_solver import StaticSolver
-from utils import get_amplitudes, get_and_expression, is_unitary, get_probability
+from utils import get_and_expression, is_unitary, get_probability
 import z3
 from random import random
 import math
@@ -250,15 +250,6 @@ class MCXGate(Z3QuantumGate):
         super().__init__(name, args)
 
     def execute(self) -> None:
-        amplitudes = []  # map a machine state to its amplitude
-        temp_curr_state = dict()
-        get_amplitudes(Z3QuantumGate.mapping, self.args, amplitudes, temp_curr_state)
-        assert(len(temp_curr_state.keys()) == 0)
-        # flip last probabilities
-        temp = amplitudes[len(amplitudes)-1]
-        amplitudes[len(amplitudes)-1] = amplitudes[len(amplitudes)-2]
-        amplitudes[len(amplitudes)-2] = temp
-
 
         target_qubit = Z3QuantumGate.mapping[self.args[-1]].get_vars()
 
@@ -270,23 +261,7 @@ class MCXGate(Z3QuantumGate):
         and_expression = get_and_expression(qubits_to_and)
         StaticSolver.solver.add(target_qubit == z3.If(and_expression, z3.Not(current_target), current_target))
 
-        # compute individual probabilities of qubits
-        current_bit = 1
-        c_amplitudes = 2**len(self.args)
-        for q in range(len(self.args)):
-            temp_zero_amplitude = complex(0,0)
-            temp_one_amplitude = complex(0,0)
-            for i in range(c_amplitudes):
-                if i & current_bit:
-                    temp_one_amplitude += amplitudes[i]
-                else:
-                    temp_zero_amplitude += amplitudes[i]
 
-            if q == 0:
-                Z3QuantumGate.mapping[self.args[-1]].swap_vars(temp_zero_amplitude, temp_one_amplitude, target_qubit)
-            else:
-                Z3QuantumGate.mapping[self.args[-1 - q]].swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
-            current_bit *=2
 
 
 
