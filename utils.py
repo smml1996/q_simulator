@@ -1,49 +1,55 @@
-from typing import Optional
+from z3 import And
+from static_solver import StaticSolver
+import math
 
-from z3 import Solver, Bool, sat, unsat, And
+def get_probability(zero_amplitude, one_amplitude):
+    qubit_total_probability = zero_amplitude * zero_amplitude.conjugate() + one_amplitude * one_amplitude.conjugate()
+    qubit_total_probability = qubit_total_probability.real
+    return qubit_total_probability
 
+def is_unitary(qubits, name):
+    zero_amplitude = qubits[name].zero_amplitude
+    one_amplitude = qubits[name].one_amplitude
+    qubit_total_probability = get_probability(zero_amplitude, one_amplitude)
+    return math.isclose(qubit_total_probability, 1.0, rel_tol=1e-5)
 
-class StaticSolver:
-    solver: Solver = Solver()
+def get_amplitudes(qubits, args, amplitudes, current_state, current_amplitude=complex(1,0)):
 
-    @staticmethod
-    def check():
-        return StaticSolver.solver.check()
-
-    @staticmethod
-    def is_value_sat(var: Bool, value: bool) -> Optional[bool]:
-        StaticSolver.solver.push()  # create new scope
-        StaticSolver.solver.add(var == value)
-        check_value = StaticSolver.check()
-        StaticSolver.solver.pop()  # restore state
-        if check_value == sat:
-            return True
-        if check_value == unsat:
-            return False
-        return None
-
-    @staticmethod
-    def model():
-        m = StaticSolver.solver.model()
-        print(m)
-
-
-def get_amplitudes(qubits, args, amplitudes, current_amplitude=1.0):
     zero_amplitude = qubits[args[0]].zero_amplitude
     one_amplitude = qubits[args[0]].one_amplitude
+    current_qubit = qubits[args[0]].qubit
+    print("prev", args[0], zero_amplitude, one_amplitude)
     for i in range(2):
+        assert(current_qubit not in current_state.keys())
+        current_state[current_qubit] = True
+        eval_true = StaticSolver.is_state_sat(current_state)
+        current_state[current_qubit] = False
+        eval_false = StaticSolver.is_state_sat(current_state)
+        if eval_true is None or eval_false is None:
+            raise Exception("SAT solver timeout")
+
         if i == 0:
-            updated_amplitude = current_amplitude*zero_amplitude
-            if len(args) > 1:
-                get_amplitudes(args[1:], amplitudes, updated_amplitude)
+            current_state[current_qubit] = False
+
+            if eval_true and eval_false:
+                updated_amplitude = current_amplitude * zero_amplitude
             else:
-                amplitudes.append(updated_amplitude)
+                print("keep current_amplitude")
+                updated_amplitude = current_amplitude
         else:
-            updated_amplitude = current_amplitude*one_amplitude
-            if len(args) > 1:
-                get_amplitudes(args[1:], amplitudes, updated_amplitude)
+            current_state[current_qubit] = True
+
+            if eval_true and eval_false:
+                updated_amplitude = current_amplitude * one_amplitude
             else:
-                amplitudes.append(updated_amplitude)
+                updated_amplitude = current_amplitude
+
+        if len(args) > 1:
+            get_amplitudes(qubits, args[1:], amplitudes, current_state, updated_amplitude)
+        else:
+            amplitudes.append(updated_amplitude)
+
+        del current_state[current_qubit]
 
 
 def get_and_expression(qubits):
