@@ -60,6 +60,8 @@ class Z3QuantumGate:
         for (var_name, obj_qubit) in Z3QuantumGate.mapping.items():
             random_num = random()
             assert(0 <= random_num <= 1.0)
+            print((obj_qubit.zero_amplitude * obj_qubit.zero_amplitude.conjugate()
+                                + obj_qubit.one_amplitude * obj_qubit.one_amplitude.conjugate()).real)
             assert(math.isclose((obj_qubit.zero_amplitude * obj_qubit.zero_amplitude.conjugate()
                                 + obj_qubit.one_amplitude * obj_qubit.one_amplitude.conjugate()).real, 1.0,
                                 rel_tol=1e-5))
@@ -165,7 +167,7 @@ class CXGate(Z3QuantumGate):
         temp_target_zero = alpha1*alpha2 + beta1*beta2
         temp_target_one = alpha1*beta2 + alpha2*beta1
 
-        StaticSolver.solver.add(target_qubit == z3.If(control.qubit, z3.Not(target.qubit), target.qubit))
+        # StaticSolver.solver.add(target_qubit == z3.If(control.qubit, z3.Not(target.qubit), target.qubit))
         control.swap_vars(temp_control_zero, temp_control_one, None)
         target.swap_vars(temp_target_zero, temp_target_one, target_qubit)
 
