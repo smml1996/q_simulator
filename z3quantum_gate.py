@@ -2,10 +2,11 @@ from typing import Dict, List, Optional, Tuple
 from z3qubit import Z3Qubit
 from settings import *
 from static_solver import StaticSolver
-from utils import get_and_expression, is_unitary, get_probability
+from utils import *
 import z3
 from random import random
 import math
+import numpy as np
 
 
 class Z3QuantumGate:
@@ -38,8 +39,8 @@ class Z3QuantumGate:
             self.base_class = TGate(self.name, self.args)
         elif self.name == S:
             self.base_class = SGate(self.name, self.args)
-        elif self.name == CCX or self.name == MCX:
-            self.base_class = MCXGate(self.name, self.args)
+        elif self.name == CCX:
+            self.base_class = CCXGate(self.name, self.args)
         else:
             raise Exception(f"Gate ({self.name}) not implemented")
 
@@ -60,6 +61,7 @@ class Z3QuantumGate:
         """
         prob: complex = 1.0
         state: Dict[str, bool] = dict()
+        StaticSolver.solver.push()
         for (var_name, obj_qubit) in Z3QuantumGate.mapping.items():
             random_num = random()
             assert(0 <= random_num <= 1.0)
@@ -85,6 +87,7 @@ class Z3QuantumGate:
             assert(var_name not in state.keys())
             state[var_name] = assign_value
         prob = prob * prob.conjugate()
+        StaticSolver.solver.pop()
         return round(prob.real, 2), state
 
     @staticmethod
@@ -94,32 +97,8 @@ class Z3QuantumGate:
         :param state: a dictionary mapping variable names to boolean values
         :return: probability that the given state is observed upon measurement, or None
         """
-        answer = 1.0
-        StaticSolver.solver.push()
-        for (var, value) in state.items():
-            qubit = Z3QuantumGate.mapping[var]
-            check_output = StaticSolver.is_value_sat(qubit.qubit, value)
-
-            if check_output:
-                check_output2 = StaticSolver.is_value_sat(qubit.qubit, not value)
-                if check_output2:
-                    if value:
-                        answer *= qubit.one_amplitude
-                    else:
-                        answer *= qubit.zero_amplitude
-                elif check_output2 is None:
-                    StaticSolver.solver.pop()
-                    return None
-            elif not check_output:
-                StaticSolver.solver.pop()
-                return 0.0
-            elif check_output is None:
-                StaticSolver.solver.pop()
-                return None
-
-            StaticSolver.solver.add(qubit.qubit == value)
+        answer = get_state_amplitude(Z3QuantumGate.mapping, state)
         answer = answer * answer.conjugate()
-        StaticSolver.solver.pop()
         return round(answer.real, 2)
 
 
@@ -149,26 +128,40 @@ class CXGate(Z3QuantumGate):
 
     def execute(self) -> None:
         assert (len(self.args) == 2)
+
         control = Z3QuantumGate.mapping[self.args[0]]
         target = Z3QuantumGate.mapping[self.args[1]]
-
-        alpha1 = target.zero_amplitude
-        beta1 = target.one_amplitude
-
-        alpha2 = control.zero_amplitude
-        beta2 = control.one_amplitude
-
+        # new qubit for target qubit
         target_qubit = target.get_vars()
 
-        temp_control_zero = alpha1*alpha2 + alpha2*beta1
-        temp_control_one = beta1*beta2 + beta2*alpha1
+        cx_matrix = np.array([
+            [1.0, 0.0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1],
+            [0, 0, 1, 0]
+        ]).astype('float32')
 
-        temp_target_zero = alpha1*alpha2 + beta1*beta2
-        temp_target_one = alpha1*beta2 + alpha2*beta1
+        # get current sub-machine state for arg qubits
+        amplitudes = np.array(get_amplitudes(Z3QuantumGate.mapping, self.args)).astype('float32')
+
+        # new sub-machine state
+        new_state = cx_matrix.dot(amplitudes).astype('float32')
+        assert(new_state.size == 4)
+
+        print("new state",new_state)
+        # compute probabilities of first qubit
+        temp_control_zero = get_qubit_amplitude_from_amplitudes(new_state, 0, 1)
+        temp_control_one = get_qubit_amplitude_from_amplitudes(new_state, 1, 1)
+
+
+        # compute probabilities of second qubit
+        temp_target_zero = get_qubit_amplitude_from_amplitudes(new_state, 0, 0)
+        temp_target_one = get_qubit_amplitude_from_amplitudes(new_state, 1, 0)
 
         StaticSolver.solver.add(target_qubit == z3.If(control.qubit, z3.Not(target.qubit), target.qubit))
         control.swap_vars(temp_control_zero, temp_control_one, None)
         target.swap_vars(temp_target_zero, temp_target_one, target_qubit)
+        print(get_amplitudes(Z3QuantumGate.mapping, self.args))
 
 
 class CZGate(Z3QuantumGate):
@@ -239,29 +232,9 @@ class SGate(Z3QuantumGate):
         Z3QuantumGate.mapping[self.args[0]].t()
         Z3QuantumGate.mapping[self.args[0]].t()
 
-
-class MCXGate(Z3QuantumGate):
+class CCXGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
-        """
-        assume that last element of args is the target qubit
-        :param name: unique qubit name
-        :param args: control qubits and a target qubit
-        """
         super().__init__(name, args)
 
     def execute(self) -> None:
-
-        target_qubit = Z3QuantumGate.mapping[self.args[-1]].get_vars()
-
-        # updating SAT formula
-        current_target = Z3QuantumGate.mapping[self.args[-1]].qubit
-        qubits_to_and = []
-        for name in self.args[:-1]:
-            qubits_to_and.append(Z3QuantumGate.mapping[name].qubit)
-        and_expression = get_and_expression(qubits_to_and)
-        StaticSolver.solver.add(target_qubit == z3.If(and_expression, z3.Not(current_target), current_target))
-
-
-
-
-
+        assert (len(self.args) == 1)

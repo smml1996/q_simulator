@@ -36,14 +36,15 @@ for instruction in qc.data:
         args.append(name)
 
     Z3QuantumGate(op, args).execute()
+# print(Z3QuantumGate.measure())
 
-print(Z3QuantumGate.measure())
+print(StaticSolver.get_highest_prob(Z3QuantumGate.mapping))
 
-state = {'q_0': True, 'q_1': True}
-print("|00>: ", Z3QuantumGate.does_state_exists(state))
-state = {'q_0': True, 'q_1': False}
-print("|01>: ", Z3QuantumGate.does_state_exists(state))
-state = {'q_0': False, 'q_1': True}
-print("|10>: ", Z3QuantumGate.does_state_exists(state))
-state = {'q_0': True, 'q_1': True}
-print("|11>: ", Z3QuantumGate.does_state_exists(state))
+# state = {'q_0': False, 'q_1': False}
+# print("|00>: ",get_state_amplitude(Z3QuantumGate.mapping, state)**2)
+# state = {'q_0': True, 'q_1': False}
+# print("|10>: ", get_state_amplitude(Z3QuantumGate.mapping, state)**2)
+# state = {'q_0': False, 'q_1': True}
+# print("|01>: ", get_state_amplitude(Z3QuantumGate.mapping, state)**2)
+# state = {'q_0': True, 'q_1': True}
+# print("|11>: ", get_state_amplitude(Z3QuantumGate.mapping, state)**2)
