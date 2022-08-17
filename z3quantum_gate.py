@@ -134,34 +134,24 @@ class CXGate(Z3QuantumGate):
         # new qubit for target qubit
         target_qubit = target.get_vars()
 
-        cx_matrix = np.array([
-            [1.0, 0.0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, 1],
-            [0, 0, 1, 0]
-        ]).astype('float32')
-
-        # get current sub-machine state for arg qubits
-        amplitudes = np.array(get_amplitudes(Z3QuantumGate.mapping, self.args)).astype('float32')
-
-        # new sub-machine state
-        new_state = cx_matrix.dot(amplitudes).astype('float32')
-        assert(new_state.size == 4)
-
-        print("new state",new_state)
-        # compute probabilities of first qubit
-        temp_control_zero = get_qubit_amplitude_from_amplitudes(new_state, 0, 1)
-        temp_control_one = get_qubit_amplitude_from_amplitudes(new_state, 1, 1)
-
-
-        # compute probabilities of second qubit
-        temp_target_zero = get_qubit_amplitude_from_amplitudes(new_state, 0, 0)
-        temp_target_one = get_qubit_amplitude_from_amplitudes(new_state, 1, 0)
+        alpha2 = target.zero_amplitude
+        beta2 = target.one_amplitude
 
         StaticSolver.solver.add(target_qubit == z3.If(control.qubit, z3.Not(target.qubit), target.qubit))
-        control.swap_vars(temp_control_zero, temp_control_one, None)
-        target.swap_vars(temp_target_zero, temp_target_one, target_qubit)
-        print(get_amplitudes(Z3QuantumGate.mapping, self.args))
+
+        # swap probabilties
+        target.swap_vars(beta2, alpha2, target_qubit)
+
+        alpha2_prob = z3.Real("dummy1")# z3.RealVal((alpha2 *alpha2.conjugate()).real)
+        beta2_prob = z3.Real("dummy2") # z3.RealVal((beta2 * beta2.conjugate()).real)
+        StaticSolver.solver.add(alpha2_prob == (alpha2 *alpha2.conjugate()).real)
+        StaticSolver.solver.add(beta2_prob == (beta2 * beta2.conjugate()).real)
+        prob_zero = z3.Not(control.qubit)*alpha2_prob + control.qubit*beta2_prob
+        prob_one = z3.Not(control.qubit)*beta2_prob + control.qubit*alpha2_prob
+
+        target.one_probability = prob_one
+        target.zero_probability = prob_zero
+
 
 
 class CZGate(Z3QuantumGate):

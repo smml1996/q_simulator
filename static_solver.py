@@ -45,8 +45,8 @@ class StaticSolver:
         # this doesnt work, entanglement does not allows to do this
         objective_function = 1.0
         for (var_name, z3qubit) in mapping.items():
-            prob_zero = z3qubit.get_probability(0)
-            prob_one = z3qubit.get_probability(1)
+            prob_zero = z3qubit.zero_probability
+            prob_one = z3qubit.one_probability
             objective_function *= (prob_one*z3qubit.qubit + prob_zero*Not(z3qubit.qubit))
 
         y = Real("y")

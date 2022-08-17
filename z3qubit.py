@@ -2,10 +2,11 @@ import z3
 from utils import StaticSolver
 from math import sqrt, e, pi
 
-
 class Z3Qubit:
     zero_amplitude: complex
     one_amplitude: complex
+    zero_probability: z3.ArithRef
+    one_probability: z3.ArithRef
     qubit: z3.Bool
     counter: int = 0
     name: str
@@ -15,6 +16,8 @@ class Z3Qubit:
         self.name = name
         self.zero_amplitude = complex(1, 0)
         self.one_amplitude = complex(0, 0)
+        self.zero_probability = z3.RealVal(1)
+        self.one_probability = z3.RealVal(0)
         self.qubit = z3.Bool(f"{name}_{self.counter}")
         self.counter += 1
         StaticSolver.solver.add(self.qubit == False)
@@ -54,12 +57,19 @@ class Z3Qubit:
         if qubit is not None:
             self.qubit = qubit
 
+    def set_probabilties(self) -> None:
+        zero_prob = z3.RealVal(self.get_probability(0))
+        one_prob = z3.RealVal(self.get_probability(1))
+        self.zero_probability = zero_prob
+        self.one_probability = one_prob
+
     def quantum_not(self) -> None:
         qubit = self.get_vars()
         temp_one_amplitude = self.zero_amplitude
         temp_zero_amplitude = self.one_amplitude
         StaticSolver.solver.add(qubit == z3.Not(self.qubit))
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
+        self.set_probabilties()
 
     def hadamard(self) -> None:
         # hadamard gate: 1/sqrt(2)[[1,1],[1,-1]]
@@ -67,6 +77,7 @@ class Z3Qubit:
         temp_zero_amplitude = (self.zero_amplitude + self.one_amplitude) / sqrt(2)
         temp_one_amplitude = (self.zero_amplitude - self.one_amplitude) / sqrt(2)
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
+        self.set_probabilties()
         StaticSolver.solver.add(z3.Or(qubit, True))
 
     def y(self) -> None:
@@ -74,15 +85,18 @@ class Z3Qubit:
         temp_zero_amplitude = self.one_amplitude * complex(0, -1)
         temp_one_amplitude = self.zero_amplitude * complex(0, 1)
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
+        self.set_probabilties()
 
     def z(self) -> None:
         # phase flip gate
         temp_zero_amplitude = self.zero_amplitude
         temp_one_amplitude = self.one_amplitude * complex(-1, 0)
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
+        self.set_probabilties()
 
     def t(self) -> None:
         temp_zero_amplitude = self.zero_amplitude
         temp_one_amplitude = self.one_amplitude * (complex(e, 0) ** complex(0, pi/4))
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, None)
+        self.set_probabilties()
 
