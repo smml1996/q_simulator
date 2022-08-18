@@ -1,6 +1,7 @@
 import sys
 from qiskit import QuantumCircuit
 from z3quantum_gate import *
+from static_solver import StaticSolver
 import warnings
 
 # https://ericpony.github.io/z3py-tutorial/guide-examples.htm
@@ -14,6 +15,8 @@ input_file = sys.argv[1]  # path to OpenQASM file
 
 # create quantum circuit from OpenQASM file
 qc = QuantumCircuit.from_qasm_file(input_file)
+
+StaticSolver.add_constants()
 
 # create necessary qubits
 for instruction in qc.data:
