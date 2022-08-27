@@ -41,6 +41,8 @@ class Z3QuantumGate:
             self.base_class = SGate(self.name, self.args)
         elif self.name == CCX:
             self.base_class = CCXGate(self.name, self.args)
+        elif self.name == TDG:
+            self.base_class = TDGGate(self.name, self.args)
         else:
             raise Exception(f"Gate ({self.name}) not implemented")
 
@@ -65,8 +67,8 @@ class Z3QuantumGate:
         for (var_name, obj_qubit) in Z3QuantumGate.mapping.items():
             random_num = random()
             assert(0 <= random_num <= 1.0)
-            assert(is_unitary(Z3QuantumGate.mapping, var_name))
-            if random_num <= (obj_qubit.zero_amplitude * obj_qubit.zero_amplitude.conjugate()).real:
+#            assert(is_unitary(Z3QuantumGate.mapping, var_name))
+            if random_num <= obj_qubit.zero_amplitude.squared_norm():
                 assign_value = False
             else:
                 assign_value = True
@@ -131,9 +133,10 @@ class CXGate(Z3QuantumGate):
 
         control = Z3QuantumGate.mapping[self.args[0]]
         target = Z3QuantumGate.mapping[self.args[1]]
+
+        # TARGET AMPLITUDES
         # new qubit for target qubit
         temp_zero_probability, temp_one_probability, target_qubit = target.get_vars()
-
         # adding the new zero probability
         # StaticSolver.solver.add(temp_zero_probability == z3.If(control.qubit, target.one_amplitude, target.zero_amplitude))
         StaticSolver.solver.add(temp_zero_probability.real == z3.If(control.qubit, target.one_amplitude.real, target.zero_amplitude.real))
@@ -216,6 +219,15 @@ class SGate(Z3QuantumGate):
         assert (len(self.args) == 1)
         Z3QuantumGate.mapping[self.args[0]].t()
         Z3QuantumGate.mapping[self.args[0]].t()
+
+class TDGGate(Z3QuantumGate):
+    def __init__(self, name: str, args: List[str]):
+        super().__init__(name, args)
+
+    def execute(self) -> None:
+        assert (len(self.args) == 1)
+        print("called tdg gate")
+        Z3QuantumGate.mapping[self.args[0]].t_transpose()
 
 class CCXGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):

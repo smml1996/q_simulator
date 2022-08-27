@@ -38,7 +38,7 @@ def get_qubit_probabilities(qubit) -> (complex, complex):
 
 def build_state(vars, n) -> Dict[str, bool]:
     state = dict()
-    for var in vars[::-1]:
+    for var in vars:
         state[var] = int(n % 2) == 1
         n /= 2
     return state

@@ -8,6 +8,7 @@ class StaticSolver:
     # constants
     N1: Real = Real("sc_n1")
     Z3ZERO: Real = Real("z3_zero")
+    objective_function = 1.0
 
     @staticmethod
     def check():
@@ -68,17 +69,20 @@ class StaticSolver:
         return vars_values
 
     @staticmethod
-    def get_highest_prob(mapping: Dict[str, Any], is_binary_string = False):
-        # this doesnt work, entanglement does not allows to do this
-        objective_function = 1.0
+    def build_objective_function(mapping) -> None:
         for (var_name, z3qubit) in mapping.items():
             # objective_function *= (z3qubit.one_amplitude.squared_norm()*z3qubit.qubit
             #                       + z3qubit.zero_amplitude.squared_norm()*Not(z3qubit.qubit))
-            objective_function *= If(z3qubit.qubit, z3qubit.one_amplitude.squared_norm(), z3qubit.zero_amplitude.squared_norm())
+            StaticSolver.objective_function *= If(z3qubit.qubit, z3qubit.one_amplitude.squared_norm(), z3qubit.zero_amplitude.squared_norm())
 
+
+    @staticmethod
+    def get_highest_prob(mapping: Dict[str, Any], is_binary_string = False):
+        # this doesnt work, entanglement does not allows to do this
+        StaticSolver.build_objective_function(mapping)
         y = Real("y")
-        StaticSolver.solver.add(y == objective_function)
-        StaticSolver.solver.maximize(y)
+        StaticSolver.solver.add(y == StaticSolver.objective_function)
+        # StaticSolver.solver.maximize(y)
         check_output = StaticSolver.solver.check()
         if check_output == sat:
             model = StaticSolver.solver.model()
@@ -87,3 +91,20 @@ class StaticSolver:
             return "solver timeout"
         else:
             return "unsat"
+
+    @staticmethod
+    def get_state_probability(state, mapping, y):
+        StaticSolver.solver.push()
+        for (key, z3qubit) in mapping.items():
+            StaticSolver.solver.add(z3qubit.qubit == state[key])
+        check_output = StaticSolver.solver.check()
+
+        if check_output == sat:
+            model = StaticSolver.solver.model()
+            print(state, model[y].as_decimal(3))
+        elif check_output == unknown:
+            print("solver timeout")
+        else:
+            print(state, "unsat")
+
+        StaticSolver.solver.pop()

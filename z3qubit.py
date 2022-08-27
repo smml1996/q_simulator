@@ -50,7 +50,8 @@ class Z3Qubit:
         StaticSolver.solver.add(temp_zero_amplitude == ((self.zero_amplitude + self.one_amplitude) / sqrt(2)))
         StaticSolver.solver.add(temp_one_amplitude == ((self.zero_amplitude - self.one_amplitude) / sqrt(2)))
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
-        StaticSolver.solver.add(z3.Or(qubit, True))
+
+        # StaticSolver.solver.add(z3.Or(qubit, True))
 
     def y(self) -> None:
         # introduces a global phase i
