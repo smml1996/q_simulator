@@ -46,6 +46,8 @@ for instruction in qc.data:
     Z3QuantumGate(op, args).execute()
 
 objective_function = StaticSolver.get_objective_function(Z3QuantumGate.mapping)
+print(objective_function)
+
 y = Real("y")
 StaticSolver.solver.add(y == objective_function)
 vars.sort()

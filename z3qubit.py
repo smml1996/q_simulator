@@ -3,17 +3,19 @@ from utils import StaticSolver
 from math import sqrt, e, pi
 from symbolic_complex import SymbolicComplex
 
+
 class Z3Qubit:
     zero_amplitude: SymbolicComplex
     one_amplitude: SymbolicComplex
     qubit: z3.Bool
-    counter: int = 0
+    counter: int
     name: str
 
     def __init__(self, name):
         self.name = name
-        self.zero_amplitude = SymbolicComplex(f"z_{name}_{self.counter}",1.0, 0.0)
-        self.one_amplitude = SymbolicComplex(f"o_{name}_{self.counter}",0.0, 0.0)
+        self.counter = 0
+        self.zero_amplitude = SymbolicComplex(f"z_{name}_{self.counter}", 1.0, 0.0)
+        self.one_amplitude = SymbolicComplex(f"o_{name}_{self.counter}", 0.0, 0.0)
         self.qubit = z3.Bool(f"b_{name}_{self.counter}")
         self.counter += 1
         StaticSolver.solver.add(self.qubit == False)
@@ -31,7 +33,8 @@ class Z3Qubit:
         else:
             return self.one_amplitude.squared_norm()
 
-    def swap_vars(self, temp_zero_amplitude: SymbolicComplex, temp_one_amplitude: SymbolicComplex, qubit: z3.Bool=None) -> None:
+    def swap_vars(self, temp_zero_amplitude: SymbolicComplex, temp_one_amplitude: SymbolicComplex,
+                  qubit: z3.Bool = None) -> None:
         self.zero_amplitude = temp_zero_amplitude
         self.one_amplitude = temp_one_amplitude
         if qubit is not None:

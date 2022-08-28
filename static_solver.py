@@ -74,7 +74,8 @@ class StaticSolver:
         for (var_name, z3qubit) in mapping.items():
             # objective_function *= (z3qubit.one_amplitude.squared_norm()*z3qubit.qubit
             #                       + z3qubit.zero_amplitude.squared_norm()*Not(z3qubit.qubit))
-            objective_function *= If(z3qubit.qubit, z3qubit.one_amplitude.squared_norm(), z3qubit.zero_amplitude.squared_norm())
+            objective_function *= If(z3qubit.qubit, z3qubit.one_amplitude.squared_norm(),
+                                     z3qubit.zero_amplitude.squared_norm())
 
         return objective_function
 
@@ -89,6 +90,7 @@ class StaticSolver:
         check_output = StaticSolver.solver.check()
         if check_output == sat:
             model = StaticSolver.solver.model()
+
             return model[y].as_decimal(3), StaticSolver.get_last_state_from_model(model, mapping, is_binary_string)
         elif check_output == unknown:
             return "solver timeout"

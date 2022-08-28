@@ -136,7 +136,7 @@ class CXGate(Z3QuantumGate):
 
         # TARGET AMPLITUDES
         # new qubit for target qubit
-        control_temp_0_prob, control_temp_1_prob, _ = target.get_vars()
+        control_temp_0_prob, control_temp_1_prob, _ = control.get_vars()
         target_temp_0_prob, target_temp_1_prob, target_qubit = target.get_vars()
 
         alpha1 = control.zero_amplitude
@@ -146,15 +146,15 @@ class CXGate(Z3QuantumGate):
 
         # adding the new zero probability for control
         StaticSolver.solver.add(control_temp_0_prob.real ==
-            z3.If(target.qubit, (alpha1*beta2).real, (alpha1 * alpha2).real))
+            z3.If(target_qubit, (alpha1*beta2).real, (alpha1 * alpha2).real))
         StaticSolver.solver.add(control_temp_0_prob.im ==
-            z3.If(target.qubit, (alpha1 * beta2).im, (alpha1 * alpha2).im))
+            z3.If(target_qubit, (alpha1 * beta2).im, (alpha1 * alpha2).im))
 
         # adding the new one probability for control
         StaticSolver.solver.add(control_temp_1_prob.real ==
-            z3.If(target.qubit, (beta1*alpha2).real, (beta1*beta2).real))
+            z3.If(target_qubit, (beta1*alpha2).real, (beta1*beta2).real))
         StaticSolver.solver.add(control_temp_1_prob.im ==
-                                z3.If(target.qubit, (beta1 * alpha2).im, (beta1 * beta2).im))
+                                z3.If(target_qubit, (beta1 * alpha2).im, (beta1 * beta2).im))
 
         # adding the new zero probability for target
         StaticSolver.solver.add(target_temp_0_prob.real ==
