@@ -5,6 +5,7 @@ from utils import StaticSolver
 from math import sqrt, e, pi
 from symbolic_complex import SymbolicComplex
 
+# TODO: check when to create new qubits for gates
 
 class Z3Qubit:
     zero_amplitude: SymbolicComplex
