@@ -69,43 +69,77 @@ class StaticSolver:
         return vars_values
 
     @staticmethod
-    def get_objective_function(mapping) -> Any:
+    def get_objective_function(mapping, state) -> Any:
+        # because of entanglement we need a state beforehand
         objective_function = 1.0
-        for (var_name, z3qubit) in mapping.items():
-            # objective_function *= (z3qubit.one_amplitude.squared_norm()*z3qubit.qubit
-            #                       + z3qubit.zero_amplitude.squared_norm()*Not(z3qubit.qubit))
-            objective_function *= If(z3qubit.qubit, z3qubit.one_amplitude.squared_norm(),
-                                     z3qubit.zero_amplitude.squared_norm())
+        # for (var_name, z3qubit) in mapping.items():
+        #     # objective_function *= (z3qubit.one_amplitude.squared_norm()*z3qubit.qubit
+        #     #                       + z3qubit.zero_amplitude.squared_norm()*Not(z3qubit.qubit))
+        #     objective_function *= If(z3qubit.qubit, z3qubit.one_amplitude.squared_norm(),
+        #                              z3qubit.zero_amplitude.squared_norm())
+
+        for (var_name, value) in state.items():
+
+            z3qubit = mapping[var_name]
+
+            sat_curr_value = StaticSolver.is_value_sat(z3qubit.qubit, value)
+            sat_not_curr_value = StaticSolver.is_value_sat(z3qubit.qubit, not value)
+            StaticSolver.solver.add(z3qubit.qubit == value)
+            if sat_not_curr_value is None or sat_curr_value is None:
+                raise Exception("SAT solver timeout")
+            if sat_curr_value:
+                if sat_not_curr_value:
+                    if value:
+                        objective_function *= z3qubit.one_amplitude.squared_norm()
+                    else:
+                        objective_function *= z3qubit.zero_amplitude.squared_norm()
+                else:
+                    # means that qubit is entangled its probability is 1.0 for current value
+                    pass
+            else:
+                if not sat_not_curr_value:
+                    raise Exception("this is weird, the qubit does not satisfies for any value")
+                else:
+                    objective_function *= RealVal(0.0)
+                    return objective_function
 
         return objective_function
 
 
     @staticmethod
     def get_highest_prob(mapping: Dict[str, Any], is_binary_string = False):
-        # this doesnt work, entanglement does not allows to do this
-        obj_f = StaticSolver.get_objective_function(mapping)
-        y = Real("y")
-        StaticSolver.solver.add(y == obj_f)
+        # TODO: this doesnt work, entanglement does not allows to do this
+        # obj_f = StaticSolver.get_objective_function(mapping)
+        # y = Real("y")
+        # StaticSolver.solver.add(y == obj_f)
         # StaticSolver.solver.maximize(y)
         check_output = StaticSolver.solver.check()
         if check_output == sat:
             model = StaticSolver.solver.model()
-
-            return model[y].as_decimal(3), StaticSolver.get_last_state_from_model(model, mapping, is_binary_string)
+            return model
+            #return model[y].as_decimal(3), StaticSolver.get_last_state_from_model(model, mapping, is_binary_string)
         elif check_output == unknown:
             return "solver timeout"
         else:
             return "unsat"
 
     @staticmethod
-    def get_state_probability(state, mapping, y):
-        StaticSolver.solver.push()
+    def print_amplitudes(model, mapping):
         for (key, z3qubit) in mapping.items():
-            StaticSolver.solver.add(z3qubit.qubit == state[key])
+            print(key, model[z3qubit.zero_amplitude.real].as_decimal(3), model[z3qubit.one_amplitude.real].as_decimal(3))
+
+    @staticmethod
+    def get_state_probability(state, mapping):
+
+        StaticSolver.solver.push()
+        y = Real("y")
+        StaticSolver.solver.add(y == StaticSolver.get_objective_function(mapping, state))
         check_output = StaticSolver.solver.check()
 
         if check_output == sat:
             model = StaticSolver.solver.model()
+            #print(model)
+            StaticSolver.print_amplitudes(model, mapping)
             print(state, model[y].as_decimal(3))
         elif check_output == unknown:
             print("solver timeout")

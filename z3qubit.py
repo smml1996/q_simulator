@@ -1,3 +1,5 @@
+from typing import Optional
+
 import z3
 from utils import StaticSolver
 from math import sqrt, e, pi
@@ -10,6 +12,7 @@ class Z3Qubit:
     qubit: z3.Bool
     counter: int
     name: str
+    had_count: int
 
     def __init__(self, name):
         self.name = name
@@ -19,6 +22,7 @@ class Z3Qubit:
         self.qubit = z3.Bool(f"b_{name}_{self.counter}")
         self.counter += 1
         StaticSolver.solver.add(self.qubit == False)
+        self.had_count = 0
 
     def get_vars(self) -> (SymbolicComplex, SymbolicComplex, z3.Bool):
         zero_amplitude = SymbolicComplex(f"z_{self.name}_{self.counter}")
@@ -49,11 +53,15 @@ class Z3Qubit:
 
     def hadamard(self) -> None:
         # hadamard gate: 1/sqrt(2)[[1,1],[1,-1]]
+
         temp_zero_amplitude, temp_one_amplitude, qubit = self.get_vars()
         StaticSolver.solver.add(temp_zero_amplitude == ((self.zero_amplitude + self.one_amplitude) / sqrt(2)))
         StaticSolver.solver.add(temp_one_amplitude == ((self.zero_amplitude - self.one_amplitude) / sqrt(2)))
-        self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
-
+        if self.had_count == 0:
+            self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
+        else:
+            self.swap_vars(temp_zero_amplitude, temp_one_amplitude)
+        self.had_count += 1
         # StaticSolver.solver.add(z3.Or(qubit, True))
 
     def y(self) -> None:
@@ -71,13 +79,13 @@ class Z3Qubit:
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
 
     def t(self) -> None:
-        temp_zero_amplitude, temp_one_amplitude, qubit = self.get_vars()
+        temp_zero_amplitude, temp_one_amplitude, _ = self.get_vars()
         temp_zero_amplitude = self.zero_amplitude
         StaticSolver.solver.add(temp_one_amplitude == self.one_amplitude * (complex(e, 0) ** complex(0, pi/4)))
-        self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
+        self.swap_vars(temp_zero_amplitude, temp_one_amplitude)
 
     def t_transpose(self) -> None:
-        temp_zero_amplitude, temp_one_amplitude, qubit = self.get_vars()
+        temp_zero_amplitude, temp_one_amplitude, _ = self.get_vars()
         temp_zero_amplitude = self.zero_amplitude
         StaticSolver.solver.add(temp_one_amplitude == self.one_amplitude * (complex(e, 0) ** complex(0, - pi / 4)))
-        self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
+        self.swap_vars(temp_zero_amplitude, temp_one_amplitude)

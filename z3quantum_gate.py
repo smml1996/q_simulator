@@ -1,12 +1,9 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Tuple
 from z3qubit import Z3Qubit
 from settings import *
-from static_solver import StaticSolver
 from utils import *
 import z3
 from random import random
-import math
-import numpy as np
 
 
 class Z3QuantumGate:
@@ -146,15 +143,15 @@ class CXGate(Z3QuantumGate):
 
         # adding the new zero probability for control
         StaticSolver.solver.add(control_temp_0_prob.real ==
-            z3.If(target_qubit, (alpha1*beta2).real, (alpha1 * alpha2).real))
+                                z3.If(target_qubit, (alpha1*beta2).real, (alpha1 * alpha2).real))
         StaticSolver.solver.add(control_temp_0_prob.im ==
-            z3.If(target_qubit, (alpha1 * beta2).im, (alpha1 * alpha2).im))
+                                z3.If(target_qubit, (alpha1 * beta2).im, (alpha1 * alpha2).im))
 
         # adding the new one probability for control
         StaticSolver.solver.add(control_temp_1_prob.real ==
-            z3.If(target_qubit, (beta1*alpha2).real, (beta1*beta2).real))
+                                z3.If(target_qubit, (beta1*alpha2).real, (beta1*beta2).real))
         StaticSolver.solver.add(control_temp_1_prob.im ==
-                                z3.If(target_qubit, (beta1 * alpha2).im, (beta1 * beta2).im))
+                                z3.If(target_qubit, (beta1*alpha2).im, (beta1*beta2).im))
 
         # adding the new zero probability for target
         StaticSolver.solver.add(target_temp_0_prob.real ==
@@ -167,7 +164,6 @@ class CXGate(Z3QuantumGate):
                                 z3.If(control.qubit, (beta1*alpha2).real, (alpha1*beta2).real))
         StaticSolver.solver.add(target_temp_1_prob.im ==
                                 z3.If(control.qubit, (beta1*alpha2).im, (alpha1*beta2).im))
-
 
         # add condition to SAT formula
         StaticSolver.solver.add(target_qubit == z3.If(control.qubit, z3.Not(target.qubit), target.qubit))
@@ -246,14 +242,15 @@ class SGate(Z3QuantumGate):
         Z3QuantumGate.mapping[self.args[0]].t()
         Z3QuantumGate.mapping[self.args[0]].t()
 
+
 class TDGGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):
         super().__init__(name, args)
 
     def execute(self) -> None:
         assert (len(self.args) == 1)
-        print("called tdg gate")
         Z3QuantumGate.mapping[self.args[0]].t_transpose()
+
 
 class CCXGate(Z3QuantumGate):
     def __init__(self, name: str, args: List[str]):

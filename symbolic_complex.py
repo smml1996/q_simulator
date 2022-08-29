@@ -76,3 +76,4 @@ class SymbolicComplex(object):
         conj = self.conjugate()
         return self.__mul__(conj).real
 
+

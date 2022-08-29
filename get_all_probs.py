@@ -45,13 +45,15 @@ for instruction in qc.data:
 
     Z3QuantumGate(op, args).execute()
 
-objective_function = StaticSolver.get_objective_function(Z3QuantumGate.mapping)
-print(objective_function)
+# objective_function = StaticSolver.get_objective_function(Z3QuantumGate.mapping)
+# print(objective_function)
 
-y = Real("y")
-StaticSolver.solver.add(y == objective_function)
+# y = Real("y")
+# StaticSolver.solver.add(y == objective_function)
 vars.sort()
 for i in range(2**len(vars)):
     state = build_state(vars, i)
-    StaticSolver.get_state_probability(state, Z3QuantumGate.mapping, y)
+    StaticSolver.get_state_probability(state, Z3QuantumGate.mapping)
 
+# state = build_state(vars, 9)
+# StaticSolver.get_state_probability(state, Z3QuantumGate.mapping, y)
