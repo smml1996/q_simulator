@@ -29,6 +29,7 @@ class StaticSolver:
             return True
         if check_value == unsat:
             return False
+        print(StaticSolver.solver.reason_unknown())
         return None
 
     @staticmethod
