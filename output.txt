@@ -1,0 +1,24 @@
+1*
+If(q_0_1, r_mul_79, r_mul_81)*
+If(q_2_1, r_mul_83, r_mul_85)*
+If(q_1_2, r_mul_87, r_mul_89)
+q_0 0.426? 0.426?
+q_2 0.707? 0
+q_1 0.603? 0
+{'q_0': False, 'q_1': False, 'q_2': False} 0.0455345869?
+{'q_0': True, 'q_1': False, 'q_2': False} unsat
+{'q_0': False, 'q_1': True, 'q_2': False} unsat
+q_0 0.176? -0.176?
+q_2 0.707? 0
+q_1 0 0.249?
+{'q_0': True, 'q_1': True, 'q_2': False} 0.0013404130?
+{'q_0': False, 'q_1': False, 'q_2': True} unsat
+q_0 0.176? -0.176?
+q_2 0 0.707?
+q_1 0.249? 0
+{'q_0': True, 'q_1': False, 'q_2': True} 0.0013404130?
+q_0 0.426? 0.426?
+q_2 0 0.707?
+q_1 0 0.603?
+{'q_0': False, 'q_1': True, 'q_2': True} 0.0455345869?
+{'q_0': True, 'q_1': True, 'q_2': True} unsat
