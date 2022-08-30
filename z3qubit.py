@@ -4,6 +4,7 @@ import z3
 from utils import StaticSolver
 from math import sqrt, e, pi
 from symbolic_complex import SymbolicComplex
+from stack import Stack
 
 # TODO: check when to create new qubits for gates
 
@@ -14,6 +15,8 @@ class Z3Qubit:
     counter: int
     name: str
     had_count: int
+    is_in_superposition: bool
+    stack: Stack
 
     def __init__(self, name):
         self.name = name
@@ -21,9 +24,11 @@ class Z3Qubit:
         self.zero_amplitude = SymbolicComplex(f"z_{name}_{self.counter}", 1.0, 0.0)
         self.one_amplitude = SymbolicComplex(f"o_{name}_{self.counter}", 0.0, 0.0)
         self.qubit = z3.Bool(f"b_{name}_{self.counter}")
+        self.is_in_superposition = False
         self.counter += 1
         StaticSolver.solver.add(self.qubit == False)
         self.had_count = 0
+        self.stack = Stack()
 
     def get_vars(self) -> (SymbolicComplex, SymbolicComplex, z3.Bool):
         zero_amplitude = SymbolicComplex(f"z_{self.name}_{self.counter}")
@@ -59,9 +64,7 @@ class Z3Qubit:
         StaticSolver.solver.add(temp_zero_amplitude == ((self.zero_amplitude + self.one_amplitude) / sqrt(2)))
         StaticSolver.solver.add(temp_one_amplitude == ((self.zero_amplitude - self.one_amplitude) / sqrt(2)))
 
-
-        prob_0 = temp_zero_amplitude.squared_norm()
-        StaticSolver.solver.add(z3.If(z3.And(prob_0 > 0, prob_0 < 1), True, z3.If(prob_0 == 1, z3.Not(qubit), qubit)))
+        # TODO: add condition to restrict this
         self.swap_vars(temp_zero_amplitude, temp_one_amplitude, qubit)
 
 
